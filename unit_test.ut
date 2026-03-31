@@ -1,0 +1,179 @@
+// 
+// File: unit_test.c
+// unit test program for cbc_lib.c and generated from unit_test.ut
+// @author csci243 (bks)
+// // // // // // // // // // // // // // // // // // // // // // // 
+
+//#include <stdio.h>
+//#include <string.h>
+//#include <stdlib.h>
+
+#include "cbc_lib.c"           ///< YES! include the .c SUBJECT OF TEST
+
+// // // // // // // // // // // // // // // // // // // // // // // // 
+// unit test functions of the library
+// // // // // // // // // // // // // // // // // // // // // // // // 
+
+/// unit test roll_right and roll_left
+
+__attribute__ ((unused))
+static void test_rolls(void) {
+
+    printf( "\nTest roll_right...\n");
+    block64 blk = 0x1122334455667788;
+    printf( "roll to right 4 bits:\n");
+    int i = 0;
+    for ( ; i < 16; i++ ) {
+        printf( "%2d: %#lx\n", i, blk);
+        blk = roll_right( blk, 4);
+    }
+    printf( "%2d: %#lx\n", i, blk);
+    printf( "\nTest roll_left...\n");
+    blk = 0x1122334455667788;
+    printf( "roll to left 8 bits:\n");
+    for ( i = 0; i < 8; i++ ) {
+        printf( "%2d: %#lx\n", i, blk);
+        blk = roll_left( blk, 8);
+    }
+    printf( "%2d: %#lx\n", i, blk);
+}
+
+/// unit test single calls to block_cipher_encrypt and block_cipher_decrypt
+
+__attribute__ ((unused))
+static void test_block_cipher_functions_1( void) {
+
+    printf( "\nTest 1-block, binary"
+            " block_cipher_encrypt and block_cipher_decrypt...\n");
+
+    block64 key_1 = 0xAAAAAAAABBBBBBBB;
+    block64 test_cases[] = { (block64)0xDEADBEEF1234CAFE
+                           , (block64)0xFFFFFFFFFFFFFFFF // all 1 edge case
+                           , (block64)0x0L};             // all 0 edge case
+
+    printf( "\nkey: 0x%016lx\n", key_1);
+
+    for ( size_t i = 0; i < sizeof(test_cases)/sizeof(char*); i++) {
+
+        printf( "Test #%lu:\n", i);
+        block64 plain = test_cases[i];
+        block64 crypt = block_cipher_encrypt( plain, key_1);
+        printf( "Encryption input: plain: 0x%016lx\n", plain);
+        printf( "Output: encrypted: 0x%016lx\n", crypt);
+    
+        block64 resultplain = block_cipher_decrypt( crypt, key_1);
+        printf( "Decryption input: encrypted: 0x%016lx\n", crypt);
+        printf( "Output: decrypted: 0x%016lx\n", resultplain);
+    }
+}
+
+/// print a character array representing source text or decrypted block64 value
+/// @param txt a char sequence whose length is BYTES_PER_BLOCK
+/// @pre txt is not necessarily NUL-terminated
+
+static void print_block( char txt[]) {
+
+    printf( "<");
+    for ( size_t j = 0; j < BYTES_PER_BLOCK; j++ ) {
+        // print the char or break iff the value is NUL.
+        if ( txt[j] ) putchar( txt[j]); else break;
+    }
+    printf( ">\n");
+}
+
+/// test multiple calls to block_cipher_encrypt and block_cipher_decrypt
+
+__attribute__ ((unused))
+static void test_block_cipher_functions_2( void) {
+
+    block64 key = 0xABCDEF1234554321;
+
+    printf( "\nTest multiple text input"
+            " block_cipher_encrypt and block_cipher_decrypt...\n");
+    printf( "\nkey: 0x%016lx\n", key);
+
+    char * text = "This is test #1 of the Emergency Broadcasting System.";
+
+    // split text into BYTES_PER_BLOCK chunks
+    // then encrypt and decrypt each chunk
+
+    size_t count = 1 + strlen( text) / BYTES_PER_BLOCK;
+    block64 chunk[count];
+
+    for ( size_t i = 0; i < count; i++ ) {
+        printf( "Block #%lu:\n", i);
+        char buffer[BYTES_PER_BLOCK + 1] = { '\0'};  // NULL for valgrind
+        strncpy( buffer, text+(i*BYTES_PER_BLOCK), BYTES_PER_BLOCK);
+        block64 * bbp = (block64 *)buffer;
+        chunk[i] = *bbp;
+
+        block64 crypt = block_cipher_encrypt( chunk[i], key);
+        printf( "Value: <%8s> (0x%016lx)\n", buffer, *bbp);
+        printf( "Encrypt: source: 0x%016lx encrypted: 0x%016lx \t"
+              , chunk[i], crypt);
+        print_block( buffer);
+    
+        block64 plain = block_cipher_decrypt( crypt, key);
+        printf( "Decrypt: source: 0x%016lx decrypted: 0x%016lx \t"
+              , crypt, plain);
+        char txt[BYTES_PER_BLOCK + 1];
+        block64_to_string( plain, txt);
+        print_block( txt);
+    }
+}
+
+/// test calls to cbc_encrypt and cbc_decrypt
+
+__attribute__ ((unused))
+static void test_encrypt_decrypt( void) {
+
+    block64 key = 0x1234554321ABCDEF;
+    block64 IV = 0x0L; // set for encryption
+
+    printf( "\nTest calls to cbc_encrypt and cbc_decrypt...\n");
+    printf( "\nkey: 0x%016lx\n", key);
+
+    char * text = "Test #2 of Emergency Broadcasting System.";
+
+    printf( "length of input: %lu\n", strlen( text));
+
+    // calculate count of blocks needed for encryption
+    size_t count = 1 + strlen( text) / BYTES_PER_BLOCK;
+
+    block64 * cryptblocks = cbc_encrypt( text, &IV, key);
+
+    printf( "Encryption:\n");
+    for ( size_t i = 0; i < count; i++ ) {
+        printf( "0x%016lx  ", cryptblocks[i]);
+    }
+    printf( "\n");
+
+    IV = 0x0L; // reset for decryption
+    char * result = cbc_decrypt( cryptblocks, count, &IV, key);
+    printf( "length of output: %lu\n", strlen( result));
+    printf( "Decryption:\n");
+        printf( "<%s>\n", result);
+
+    // free the allocations
+    free( cryptblocks);
+    free( result);
+}
+
+/// test_all executes all the unit tests
+
+int test_all(void) {
+
+    test_rolls();
+    test_block_cipher_functions_1();
+    test_block_cipher_functions_2();
+    test_encrypt_decrypt();
+    return 0;
+}
+
+/// run all the unit tests
+
+int main(void) {
+    test_all();
+    return 0;
+}
+

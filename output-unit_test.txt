@@ -1,0 +1,93 @@
+
+Test roll_right...
+roll to right 4 bits:
+ 0: 0x1122334455667788
+ 1: 0x8112233445566778
+ 2: 0x8811223344556677
+ 3: 0x7881122334455667
+ 4: 0x7788112233445566
+ 5: 0x6778811223344556
+ 6: 0x6677881122334455
+ 7: 0x5667788112233445
+ 8: 0x5566778811223344
+ 9: 0x4556677881122334
+10: 0x4455667788112233
+11: 0x3445566778811223
+12: 0x3344556677881122
+13: 0x2334455667788112
+14: 0x2233445566778811
+15: 0x1223344556677881
+16: 0x1122334455667788
+
+Test roll_left...
+roll to left 8 bits:
+ 0: 0x1122334455667788
+ 1: 0x2233445566778811
+ 2: 0x3344556677881122
+ 3: 0x4455667788112233
+ 4: 0x5566778811223344
+ 5: 0x6677881122334455
+ 6: 0x7788112233445566
+ 7: 0x8811223344556677
+ 8: 0x1122334455667788
+
+Test 1-block, binary block_cipher_encrypt and block_cipher_decrypt...
+
+key: 0xaaaaaaaabbbbbbbb
+Test #0:
+Encryption input: plain: 0xdeadbeef1234cafe
+Output: encrypted: 0x308fabcfa9fbba03
+Decryption input: encrypted: 0x308fabcfa9fbba03
+Output: decrypted: 0xdeadbeef1234cafe
+Test #1:
+Encryption input: plain: 0xffffffffffffffff
+Output: encrypted: 0xfbbaaaeefbbaaaee
+Decryption input: encrypted: 0xfbbaaaeefbbaaaee
+Output: decrypted: 0xffffffffffffffff
+Test #2:
+Encryption input: plain: 0x0000000000000000
+Output: encrypted: 0x0445551104455511
+Decryption input: encrypted: 0x0445551104455511
+Output: decrypted: 0x0000000000000000
+
+Test multiple text input block_cipher_encrypt and block_cipher_decrypt...
+
+key: 0xabcdef1234554321
+Block #0:
+Value: <This is > (0x2073692073696854)
+Encrypt: source: 0x2073692073696854 encrypted: 0x892fe67f4ad922e7 	<This is >
+Decrypt: source: 0x892fe67f4ad922e7 decrypted: 0x2073692073696854 	<This is >
+Block #1:
+Value: <test #1 > (0x2031232074736574)
+Encrypt: source: 0x2031232074736574 encrypted: 0x9322c67f089322e0 	<test #1 >
+Decrypt: source: 0x9322c67f089322e0 decrypted: 0x2031232074736574 	<test #1 >
+Block #2:
+Value: <of the E> (0x452065687420666f)
+Encrypt: source: 0x452065687420666f encrypted: 0xc021dd1a19d56ae0 	<of the E>
+Decrypt: source: 0xc021dd1a19d56ae0 decrypted: 0x452065687420666f 	<of the E>
+Block #3:
+Value: <mergency> (0x79636e656772656d)
+Encrypt: source: 0x79636e656772656d encrypted: 0x9222df265ade67f3 	<mergency>
+Decrypt: source: 0x9222df265ade67f3 decrypted: 0x79636e656772656d 	<mergency>
+Block #4:
+Value: < Broadca> (0x616364616f724220)
+Encrypt: source: 0x616364616f724220 encrypted: 0x9205923e5ad463fb 	< Broadca>
+Decrypt: source: 0x9205923e5ad463fb decrypted: 0x616364616f724220 	< Broadca>
+Block #5:
+Value: <sting Sy> (0x795320676e697473)
+Encrypt: source: 0x795320676e697473 encrypted: 0x8933c1266a9065fa 	<sting Sy>
+Decrypt: source: 0x8933c1266a9065fa decrypted: 0x795320676e697473 	<sting Sy>
+Block #6:
+Value: <   stem.> (0x0000002e6d657473)
+Encrypt: source: 0x0000002e6d657473 encrypted: 0x8533c15f39b02cf9 	<stem.>
+Decrypt: source: 0x8533c15f39b02cf9 decrypted: 0x0000002e6d657473 	<stem.>
+
+Test calls to cbc_encrypt and cbc_decrypt...
+
+key: 0x1234554321abcdef
+length of input: 41
+Encryption:
+0x2c5ce422a6c367c6  0xbc381949ba610851  0x5d5f84d1debb2e71  0x8773a031a210e50d  0x1cfcdae882340569  0x6b3cf71e683aaf30  
+length of output: 41
+Decryption:
+<Test #2 of Emergency Broadcasting System.>
