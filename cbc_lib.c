@@ -41,7 +41,7 @@ static block64 block_cipher_encrypt(block64 block, block64 key){
         //First Operation: Rolls bits 10 to the left
         block = roll_left(block, 10);
         //Second Operation: XORs the rolled result with the key value
-
+        block = block ^ key;
     }
     return block;
 }
@@ -52,7 +52,7 @@ static block64 block_cipher_decrypt( block64 block, block64 key){
     //For 4 rounds
     for(int i = 0; i < 4; i++){
         //First Operation: XORs the block with the key value
-        
+        block = block ^ key;
         //Second Operation: Rolls bits 10 to the right
         block = roll_right(block, 10);
     }
@@ -64,7 +64,12 @@ static block64 block_cipher_decrypt( block64 block, block64 key){
 //to contain the block content plus a NUL byte. After execution data is a
 //NULL-terminated string, representing a translation of txt
 static void block64_to_string( block64 txt, char * data){
+    size_t n = sizeof(block64);
+    for(size_t i = 0; i < n; i++){
+        data[i] = char((txt >> (8*i)) & 0xFF);
+    }
 
+    data[n] = '\0';
 }
 
 //Encrypts the text string using pIV and key, and returns the point to an 
@@ -73,7 +78,62 @@ static void block64_to_string( block64 txt, char * data){
 //the ciphertext input of the next stage, the length of the returned array
 //depending on the length of the text argument.
 static block64 * cbc_encrypt( char * text, block64 * pIV, block64 key){
+    int len = strlen(text);
 
+    //Number of 64-bit blocks
+    int num_blocks = (len +7)/8;
+
+    block64 *cipher = malloc(num_blocks * sizeof(block64));
+    if(!cipher) return NULL;
+
+    unsigned char *padded = calloc(num_blocks * 8, 1);
+    if (!padded) { free(ciphertext); return NULL; }
+    memcpy(padded, text, text_len);
+
+    for (size_t i = 0; i < num_blocks; i++) {
+        
+        //Load plain text bytes into a block64
+        block64 pi = 0;
+        for(int b = 0; b < 8; b++){
+            pi = (pi << 8 | padded[i*8 + b];
+        }
+
+        //When i = 0, *pIV holds the IV playing the role of C(-1)
+        block64 ci = block_cipher_encrypt(pi ^ *pIV, key);
+
+        cipher[i] = ci;
+        *pIV = ci;
+    }
+    free(padded);
+    return cipher;
+}
+
+//Decrypts the ciphertext array of count blocks using pIV and key. Returning
+//a text string representing the concatenation of the decrypted plaintexts
+//of all the blocks within the array and an updated *pIV. With pIV reffering 
+//to the initialization vector of the ciphertext block to feed forward to the 
+//next stage
+static char * cbc_decrypt(block64 *ciphertext, size_t count, block64 *pIV, 
+block64 key){
+    //Allocate output string
+    char *text = calloc(count * 8 + 1, 1);
+    if (!text) return NULL;
+
+    for (size_t i = 0; i < count; i++) {
+
+        block64 di = block_cipher_decrypt(ciphertext[i], key);
+        //When i = 0, *pIV holds the IV playing the role of C(-1)
+        block64 pi = di ^ *pIV;
+
+        //Unpack pi into 8 bytes of the output string
+        for (int b = 0; b < 8; b++)
+            text[i * 8 + b] = (pi >> (56 - b * 8)) & 0xFF;
+
+        //Update pIV
+        *pIV = ciphertext[i];
+    }
+
+    return text;
 }
 
 //Encode standard input to a dile named in destpath, the function prints
