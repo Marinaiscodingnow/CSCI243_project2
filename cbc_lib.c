@@ -140,7 +140,60 @@ block64 key){
 //'ok' or 'FAILED' to stderr on completion, returning EXIT_SUCCESS or 
 //EXIT_FAILURE
 int encode(const char*destpath){
+    //Read stdin
+    size_t capacity = 4096;
+    size_t length = 0;
+    char *buf = malloc(capacity);
+    if(!buf){
+        fprintf(stderr, "out of memory \n");
+        return EXIT_FAILURE;
+    }
 
+    int c;
+    while((c = fgetc(stdin)) != EOF){
+        if(length +1 >= capacity){
+            capacity *= 2;
+            char *tmp realloc(buf, capacity);
+            if(!tmp){
+                free(buf);
+                fprintf(stderr, "out of memory\n");
+                return EXIT_FAILURE;
+            }
+            buf = tmp;
+        }
+        buf[length++] = char(c);
+    }
+    buf[length] = '\0';
+
+    //encrypt
+    block64 iv = INITIALIZATION_VECTOR;
+    block64 *cipherblocks = cbc_encrypt(buf, &iv, key);
+    free(buf);
+    if(!cipherblocks){
+        fprintf(stderr, "encryption failed: out of memory\n");
+        return EXIT_FAILURE;
+    }
+    //Number of blocks = (length/8)+1
+    size_t nblocks = (length / (size_t)sizeof(block64));
+
+    //Write to file
+    FILE *fp = fopen(destpath, "wb");
+    if(!fp){
+        fprintf(stderr, "%s: %s\n", destpath, strerror(errno));
+        free(cipherblocks);
+        return EXIT_FAILURE;
+    }
+
+    size_t written = fwrite(cipherblocks, sizeof(block64), nblocks, fp);
+    fclose(fp);
+    free(cipherblcoks);
+
+    if(written != nblocks){
+        fprintf(stderr, "%s: write error\n", destpath);
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
 
 //Decode content of a file named in sourcepath to standard output, the function
