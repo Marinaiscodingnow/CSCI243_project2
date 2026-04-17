@@ -9,7 +9,7 @@
 //Reads a CBC-encrypted file and writes a plaintext to stdout
 int main(int argc, char *argv[]){
     if(argc != 2){
-        fprintf(stderr, "usage: decode from-file-name\n");
+        fprintf(stderr, "usage: decode file-name  # to standard input\n");
         return EXIT_FAILURE;
     }
 

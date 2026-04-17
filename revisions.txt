@@ -1,0 +1,59 @@
+commit fa13a4dba8a1d0d8f09519db939444d69e6600c3
+Author: mmk9233 <marinakania4@gmail.com>
+Date:   Fri Apr 17 15:52:29 2026 -0400
+
+    Used a 1 instead of an i, and a few other typos that were causing major errors
+
+commit 2d6bcf5a821a0c1fcd6b6278e3603c7f60544feb
+Author: mmk9233 <marinakania4@gmail.com>
+Date:   Fri Apr 17 15:46:45 2026 -0400
+
+    Used a for loop instead of memcpy
+
+commit 3a6407ac3134dcb2f5dae8bee759eb44e98b7ec4
+Author: mmk9233 <marinakania4@gmail.com>
+Date:   Fri Apr 17 15:30:11 2026 -0400
+
+    Fixed spelling and syntax errors
+
+commit 9be3a6fe69ae4aacf3566af8753f9797943b1875
+Author: mmk9233 <marinakania4@gmail.com>
+Date:   Fri Apr 17 14:51:22 2026 -0400
+
+    Finished the decode function, proceed to testing
+
+commit a6b0e8c58a2803d23389c3c3d86f6b8a2916b52d
+Author: mmk9233 <marinakania4@gmail.com>
+Date:   Thu Apr 16 17:26:41 2026 -0400
+
+    Completed the encode() function
+
+commit fa0ac89c4857047f0570d3e7f88659db87dbbc93
+Author: mmk9233 <marinakania4@gmail.com>
+Date:   Wed Apr 15 19:34:41 2026 -0400
+
+    Completed task 3, encode.c and decode.c
+
+commit 464fe8ed466b150e6c1994f8bb3a483eb3312cb6
+Author: mmk9233 <marinakania4@gmail.com>
+Date:   Tue Apr 14 20:08:33 2026 -0400
+
+    Completed block64_to_string, cbc_encrypt, and cbc_decrypt. Marking task 1 as finished
+
+commit 36a11bd5926b18a9cc24a2ac3893f3fecfa05251
+Author: mmk9233 <marinakania4@gmail.com>
+Date:   Mon Apr 13 22:41:39 2026 -0400
+
+    Completed roll_right and roll_left, started block_cipher_encrypt and decrypt
+
+commit 0f572dbd760ae90e28d22d554850de91cfc015c1
+Author: mmk9233 <marinakania4@gmail.com>
+Date:   Thu Apr 9 14:48:18 2026 -0400
+
+    Baseline commit with the addition of cbc_lib.c file
+
+commit 1f4507ca9ebaa929782360c7675e75cc992b1e34
+Author: mmk9233 <marinakania4@gmail.com>
+Date:   Tue Mar 31 14:11:32 2026 -0400
+
+    Baseline commit

@@ -9,7 +9,7 @@
 //Reads from stdin and writes CBC-encrypted output to file
 int main(int argc, char *argv[]){
     if(argc != 2){
-        fprintf(stderr, "usage: encode to-file-name\n");
+        fprintf(stderr, "usage: encode to-file-name  # from standard input\n");
         return EXIT_FAILURE;
     }
     if(encode(argv[1]) != 0){
