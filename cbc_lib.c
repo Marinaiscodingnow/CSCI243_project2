@@ -6,7 +6,10 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "cbc_lib.h"
+#define BYTES_PER_BLOCK 8
+
 
 static block64 key = 0x1234DeadBeefCafe; // each hex digit is 4 bits
 static const block64 INITIALIZATION_VECTOR = 0x0L; // initial IV value
@@ -66,7 +69,7 @@ static block64 block_cipher_decrypt( block64 block, block64 key){
 static void block64_to_string( block64 txt, char * data){
     size_t n = sizeof(block64);
     for(size_t i = 0; i < n; i++){
-        data[i] = char((txt >> (8*i)) & 0xFF);
+        data[i] = (char)((txt >> (8*i)) & 0xFF);
     }
 
     data[n] = '\0';
@@ -87,15 +90,15 @@ static block64 * cbc_encrypt( char * text, block64 * pIV, block64 key){
     if(!cipher) return NULL;
 
     unsigned char *padded = calloc(num_blocks * 8, 1);
-    if (!padded) { free(ciphertext); return NULL; }
-    memcpy(padded, text, text_len);
+    if (!padded) { free(cipher); return NULL; }
+    memcpy(padded, text, len);
 
-    for (size_t i = 0; i < num_blocks; i++) {
+    for (int i = 0; i < num_blocks; i++) {
         
         //Load plain text bytes into a block64
         block64 pi = 0;
         for(int b = 0; b < 8; b++){
-            pi = (pi << 8 | padded[i*8 + b];
+            pi = (pi << 8 | padded[i*8 + b]);
         }
 
         //When i = 0, *pIV holds the IV playing the role of C(-1)
@@ -116,23 +119,24 @@ static block64 * cbc_encrypt( char * text, block64 * pIV, block64 key){
 static char * cbc_decrypt(block64 *ciphertext, size_t count, block64 *pIV, 
 block64 key){
     //Allocate output string
-    char *text = calloc(count * 8 + 1, 1);
+    size_t bufsize = count *BYTES_PER_BLOCK + 1;
+    char *text = malloc(bufsize);
     if (!text) return NULL;
+    block64 prev = *pIV;
+    char tmp[BYTES_PER_BLOCK+1];
 
     for (size_t i = 0; i < count; i++) {
-
-        block64 di = block_cipher_decrypt(ciphertext[i], key);
+        block64 cipher = ciphertext[i];
+        block64 di = block_cipher_decrypt(cipher, key);
         //When i = 0, *pIV holds the IV playing the role of C(-1)
-        block64 pi = di ^ *pIV;
-
+        block64 pi = di ^ prev;
+        block64_to_string(pi, tmp);
         //Unpack pi into 8 bytes of the output string
-        for (int b = 0; b < 8; b++)
-            text[i * 8 + b] = (pi >> (56 - b * 8)) & 0xFF;
-
+        memcpy(text + i *BYTES_PER_BLOCK, tmp, BYTES_PER_BLOCK);
         //Update pIV
-        *pIV = ciphertext[i];
+        prev = cipher;
     }
-
+    text[count * BYTES_PER_BLOCK] = '\0';
     return text;
 }
 
@@ -153,7 +157,7 @@ int encode(const char*destpath){
     while((c = fgetc(stdin)) != EOF){
         if(length +1 >= capacity){
             capacity *= 2;
-            char *tmp realloc(buf, capacity);
+            char *tmp = realloc(buf, capacity);
             if(!tmp){
                 free(buf);
                 fprintf(stderr, "out of memory\n");
@@ -161,7 +165,7 @@ int encode(const char*destpath){
             }
             buf = tmp;
         }
-        buf[length++] = char(c);
+        buf[length++] = (char)c;
     }
     buf[length] = '\0';
 
@@ -174,7 +178,7 @@ int encode(const char*destpath){
         return -1;
     }
     //Number of blocks = (length/8)+1
-    size_t nblocks = (length / (size_t)sizeof(block64));
+    size_t nblocks = (length / BYTES_PER_BLOCK);
 
     //Write to file
     FILE *fp = fopen(destpath, "wb");
@@ -186,7 +190,7 @@ int encode(const char*destpath){
 
     size_t written = fwrite(cipherblocks, sizeof(block64), nblocks, fp);
     fclose(fp);
-    free(cipherblcoks);
+    free(cipherblocks);
 
     if(written != nblocks){
         fprintf(stderr, "%s: write error\n", destpath);
@@ -201,7 +205,7 @@ int encode(const char*destpath){
 int decode(const char*sourcepath){
     FILE *fp = fopen(sourcepath, "rb");
     if(!fp){
-        fprintf(stderr," %s: %s\n", sourcepath, sterror(erno));
+        fprintf(stderr," %s: %s\n", sourcepath, strerror(errno));
         return -1;
     }
 
