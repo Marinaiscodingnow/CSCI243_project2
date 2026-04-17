@@ -97,7 +97,7 @@ static block64 * cbc_encrypt( char * text, block64 * pIV, block64 key){
         
         //Load plain text bytes into a block64
         block64 pi = 0;
-        memcpy(&pi, padded +1 *8, 8);
+        memcpy(&pi, padded +i *8, 8);
 
         //When i = 0, *pIV holds the IV playing the role of C(-1)
         block64 ci = block_cipher_encrypt(pi ^ *pIV, key);
@@ -176,7 +176,7 @@ int encode(const char*destpath){
         return -1;
     }
     //Number of blocks = (length/8)+1
-    size_t nblocks = (length / BYTES_PER_BLOCK);
+    size_t nblocks = (length +7)/ BYTES_PER_BLOCK;
 
     //Write to file
     FILE *fp = fopen(destpath, "wb");
@@ -221,9 +221,10 @@ int decode(const char*sourcepath){
     size_t nblocks = (size_t)fsize / sizeof(block64);
 
     //Empty file means no output
+    //Return success
     if(nblocks == 0){
         fclose(fp);
-        return -1;
+        return 0;
     }
     
     block64 *cipherblocks = malloc(nblocks * sizeof(block64));
