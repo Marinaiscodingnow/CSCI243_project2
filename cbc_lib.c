@@ -146,7 +146,7 @@ int encode(const char*destpath){
     char *buf = malloc(capacity);
     if(!buf){
         fprintf(stderr, "out of memory \n");
-        return EXIT_FAILURE;
+        return -1;
     }
 
     int c;
@@ -157,7 +157,7 @@ int encode(const char*destpath){
             if(!tmp){
                 free(buf);
                 fprintf(stderr, "out of memory\n");
-                return EXIT_FAILURE;
+                return -1;
             }
             buf = tmp;
         }
@@ -171,7 +171,7 @@ int encode(const char*destpath){
     free(buf);
     if(!cipherblocks){
         fprintf(stderr, "encryption failed: out of memory\n");
-        return EXIT_FAILURE;
+        return -1;
     }
     //Number of blocks = (length/8)+1
     size_t nblocks = (length / (size_t)sizeof(block64));
@@ -181,7 +181,7 @@ int encode(const char*destpath){
     if(!fp){
         fprintf(stderr, "%s: %s\n", destpath, strerror(errno));
         free(cipherblocks);
-        return EXIT_FAILURE;
+        return -1;
     }
 
     size_t written = fwrite(cipherblocks, sizeof(block64), nblocks, fp);
@@ -190,14 +190,69 @@ int encode(const char*destpath){
 
     if(written != nblocks){
         fprintf(stderr, "%s: write error\n", destpath);
-        return EXIT_FAILURE;
+        return -1;
     }
 
-    return EXIT_SUCCESS;
+    return 0;
 }
 
 //Decode content of a file named in sourcepath to standard output, the function
 //prints 'ok' or 'FAILED' to stderr, and returns EXIT_SUCCESS OR EXIT_FAILURE
 int decode(const char*sourcepath){
+    FILE *fp = fopen(sourcepath, "rb");
+    if(!fp){
+        fprintf(stderr," %s: %s\n", sourcepath, sterror(erno));
+        return -1;
+    }
 
+    //Determine file size
+    fseek(fp,0,SEEK_END);
+    long fsize = ftell(fp);
+    rewind(fp);
+
+    if(fsize<0) {
+        fprintf(stderr, "%s: seek error\n", sourcepath);
+        fclose(fp);
+        return -1;
+    }
+
+    size_t nblocks = (size_t)fsize / sizeof(block64);
+
+    //Empty file means no output
+    if(nblocks == 0){
+        fclose(fp);
+        return -1;
+    }
+    
+    block64 *cipherblocks = malloc(nblocks * sizeof(block64));
+    if(!cipherblocks){
+        fprintf(stderr, "out of memory \n");
+        fclose(fp);
+        return -1;
+    }
+
+    size_t nread = fread(cipherblocks, sizeof(block64), nblocks, fp);
+    fclose(fp);
+
+    if(nread != nblocks){
+        fprintf(stderr, "%s: read error\n", sourcepath);
+        free(cipherblocks);
+        return -1;
+    }
+
+    //Decrypt
+    block64 iv = INITIALIZATION_VECTOR;
+    char *plaintext = cbc_decrypt(cipherblocks, nblocks, &iv, key);
+    free(cipherblocks);
+
+    if(!plaintext){
+        fprintf(stderr, "decryption failed: out of memory\n");
+        return -1;
+    }
+
+    //Print without trailing NUL padding
+    fputs(plaintext, stdout);
+    free(plaintext);
+
+    return 0;
 }
