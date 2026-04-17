@@ -97,9 +97,7 @@ static block64 * cbc_encrypt( char * text, block64 * pIV, block64 key){
         
         //Load plain text bytes into a block64
         block64 pi = 0;
-        for(int b = 0; b < 8; b++){
-            pi = (pi << 8 | padded[i*8 + b]);
-        }
+        memcpy(&pi, padded +1 *8, 8);
 
         //When i = 0, *pIV holds the IV playing the role of C(-1)
         block64 ci = block_cipher_encrypt(pi ^ *pIV, key);
